@@ -86,6 +86,7 @@
 
 			var XMLHttpRequestOpenProxy = window.XMLHttpRequest.prototype.open;
 			var XMLHttpRequestSendProxy = window.XMLHttpRequest.prototype.send;
+			var FormDataProxy = window.FormData.prototype.append;
 			var processes = [];
 			var status = { uploading: 0, completed: 0, error: 0 };
 			var scope = $rootScope.$new();
@@ -169,26 +170,20 @@
 
 				XMLHttpRequest.prototype.send = function(formData) {
 
-					if(formData) {
-						var formKeys    = formData.keys();
-						var formEntries = formData.entries();
-
-						var files = [];
-						do {
-							var entry = formEntries.next().value;
-							if(entry && entry[1] instanceof File) {
-								files.push(entry[1]);
-							}
-
-						} while (!formKeys.next().done);
-
-						if(files.length) {
-							this.process = { status: 'pending', percent: 0, files: files };
-							processes.push(this.process);
-						}
+					if(formData && formData.files && formData.files.length) {
+						this.process = { status: 'pending', percent: 0, files: formData.files };
+						processes.push(this.process);
 					}
 
 					return XMLHttpRequestSendProxy.apply(this, [].slice.call(arguments));
+				}
+
+				FormData.prototype.append = function(name,file,filename) {
+					if(!this.files) {
+						this.files = [];
+					}
+					this.files.push(file);
+					return FormDataProxy.apply(this, [].slice.call(arguments));
 				}
             }
 
