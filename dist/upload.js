@@ -182,7 +182,11 @@
 					if(!this.files) {
 						this.files = [];
 					}
-					this.files.push(file);
+
+					if(file instanceof File) {
+						this.files.push(file);
+					}
+
 					return FormDataProxy.apply(this, [].slice.call(arguments));
 				}
             }

@@ -8,7 +8,7 @@
     	if(!files)
     		return;
 
-    	var data = {};
+    	var data = { asd: 'asdasdasd', asdss: 'asdasdasd' };
     	angular.forEach(files,function(file,index) {
     		data[file + '_' + index] = file;
     	});
