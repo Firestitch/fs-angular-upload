@@ -1,0 +1,17 @@
+node_modules
+.tmp
+.sass-cache
+bower_components
+
+# Project notes like pdf's and txt's
+*.pdf
+*.txt
+project-files
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+/app/config
+/app/iconfont
+/dist
+
+app/scripts/services/mocks/

@@ -1,0 +1,17 @@
+{
+  "name": "fs-angular-upload",
+  "description": "",
+  "main": [
+    "dist/upload.js",
+    "dist/upload.css"
+  ],
+  "authors": [
+    "Firestitch Inc."
+  ],
+  "license": "MIT",
+  "ignore": [
+    "src",
+    ".gitignore"
+  ],
+  "private": false
+}

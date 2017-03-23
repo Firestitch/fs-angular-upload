@@ -1,0 +1,28 @@
+<div class="dialog" ng-show="opened">
+	<div class="header" layout="row" layout-align="start center">
+		<div flex>
+			{{message}}
+		</div>
+		<a href ng-click="close()"><md-icon>clear</md-icon></a>
+	</div>
+	<div class="files">
+		<table>
+			<tbody class="process" ng-repeat="process in processes">
+				<tr ng-repeat="file in process.files">
+					<td class="file" ng-class="{ error: process.status=='error' }">
+						{{file.name}}
+						<span class="error-message" ng-show="process.message">{{process.message}}</span>
+					</td>
+					<td class="status">
+						<md-icon class="completed" ng-show="process.status=='completed'">check_circle</md-icon>
+						<md-icon class="error" ng-show="process.status=='error'">error</md-icon>
+						<md-tooltip>
+							{{process.status=='error' ? 'Failed to upload' : process.percent + '%' }}
+						</md-tooltip>
+						<md-progress-circular ng-show="process.status=='uploading'" md-mode="determinate" value="{{process.percent}}" md-diameter="24"></md-progress-circular>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>

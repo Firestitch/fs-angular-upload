@@ -1,0 +1,17 @@
+.container,
+.navbar-static-top .container,
+.navbar-fixed-top .container,
+.navbar-fixed-bottom .container {
+  width: 90%;
+  margin: auto;
+}
+
+.span9 {
+  width: auto;
+  padding-left: 30px;
+}
+
+[class*="span"] {
+	display: table-cell;
+	float: none;
+}

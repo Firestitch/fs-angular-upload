@@ -1,0 +1,12 @@
+//import the various styles in order of specificity
+//@import "layoutstylesheet";
+
+.cf:before,
+.cf:after {
+    content: " "; /* 1 */
+    display: table; /* 2 */
+}
+
+.cf:after {
+    clear: both;
+}

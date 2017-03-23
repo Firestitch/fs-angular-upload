@@ -1,0 +1,152 @@
+(function () {
+    'use strict';
+
+    angular.module('fs-angular-upload')
+    .provider('fsUpload', function () {
+
+    	var provider = this;
+
+    	provider.onloadstart = null
+
+
+/*        var provider = this;
+
+        this._options = {   url: null,
+                            data: {},
+                            events: {
+                                begin: null
+                            }};
+
+        this.options = function(options) {
+
+            if(!arguments.length)
+                return this._options;
+
+            this._options = angular.merge({},this._options,options);
+        }
+
+        this.option = function(name, value) {
+
+             if(arguments.length==1)
+                return this._options[arguments[0]];
+
+            this._options[name] = value;
+        }*/
+
+
+        this.$get = function ($compile,$rootScope,$timeout) {
+
+
+			var XMLHttpRequestOpenProxy = window.XMLHttpRequest.prototype.open;
+			var XMLHttpRequestSendProxy = window.XMLHttpRequest.prototype.send;
+			var processes = [];
+			var status = { uploading: 0, completed: 0, error: 0 };
+			var scope = $rootScope.$new();
+			var fsUploadStatus = null;
+            var service = {
+            	init: init,
+            	processes: processes,
+            	status: status,
+            	clear: clear
+            };
+
+            function clear() {
+            	processes.splice(0);
+            	update();
+            }
+
+            function update() {
+            	status.uploading = 0;
+            	status.completed = 0;
+            	status.error = 0;
+
+            	angular.forEach(processes,function(process) {
+            		var files = process.files.length;
+            		if(process.status=='uploading')
+            			status.uploading += files;
+            		else if(process.status=='completed')
+            			status.completed += files;
+            		else if(process.status=='error')
+            			status.error += files;
+            	});
+            }
+
+            function init() {
+				window.XMLHttpRequest.prototype.open = function(method,url) {
+
+					if(method==='POST') {
+						var self = this;
+						this.upload.onprogress = function (e) {
+						    if(self.process && e.lengthComputable) {
+						        self.process.percent = Math.round((e.loaded/e.total) * 100);
+						    }
+						}
+
+						this.upload.onloadstart = function() {
+							if(self.process) {
+								scope.opened = true;
+								self.process.status = 'uploading';
+								update();
+
+								if(!fsUploadStatus) {
+									fsUploadStatus = angular.element('<fs-upload-status>');
+									angular.element(document.body).append(fsUploadStatus);
+									$compile(fsUploadStatus)(scope);
+								}
+							}
+						}
+
+						this.upload.onloadend = function (e) {
+						    if(self.process) {
+						    	if(self.process.status!='error') {
+						    		self.process.status = 'completed';
+						    	}
+						    	update();
+							}
+						}
+
+						this.upload.onerror = function (e) {
+						    if(self.process) {
+						    	self.process.status = 'error';
+						    	update();
+							}
+						}
+
+						this.upload.onabort = function (e) {
+
+						}
+					}
+
+					return XMLHttpRequestOpenProxy.apply(this, [].slice.call(arguments));
+				}
+
+				XMLHttpRequest.prototype.send = function(formData) {
+
+					if(formData) {
+						var formKeys    = formData.keys();
+						var formEntries = formData.entries();
+
+						var files = [];
+						do {
+							var entry = formEntries.next().value;
+							if(entry && entry[1] instanceof File) {
+								files.push(entry[1]);
+							}
+
+						} while (!formKeys.next().done);
+
+						if(files.length) {
+							this.process = { status: 'pending', percent: 0, files: files };
+							processes.push(this.process);
+						}
+					}
+
+					return XMLHttpRequestSendProxy.apply(this, [].slice.call(arguments));
+				}
+            }
+
+            return service;
+
+        }
+    });
+})();
