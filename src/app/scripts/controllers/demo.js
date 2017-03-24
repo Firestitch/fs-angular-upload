@@ -15,7 +15,7 @@
 
 
         Upload.upload({
-            url: 'http://service.local.firestitch.com/api/dummy',
+            url: 'https://service.firestitch.com/api/dummy',
             data: data
         }).then(function (resp) {
             //console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);

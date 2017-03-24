@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    angular.module('fs-angular-upload',[])
+    angular.module('fs-angular-upload',['fs-angular-format','fs-angular-date'])
     .directive('fsUploadStatus', function($location,fsUpload) {
         return {
             templateUrl: 'views/directives/uploadstatus.html',

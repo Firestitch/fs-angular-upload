@@ -2,7 +2,7 @@
 (function () {
     'use strict';
 
-    angular.module('fs-angular-upload',[])
+    angular.module('fs-angular-upload',['fs-angular-format','fs-angular-date'])
     .directive('fsUploadStatus', function($location,fsUpload) {
         return {
             templateUrl: 'views/directives/uploadstatus.html',
@@ -81,7 +81,7 @@
         }*/
 
 
-        this.$get = function ($compile,$rootScope,$timeout) {
+        this.$get = function ($compile,$rootScope,fsFormat,fsDate) {
 
 
 			var XMLHttpRequestOpenProxy = window.XMLHttpRequest.prototype.open;
@@ -123,10 +123,22 @@
 				window.XMLHttpRequest.prototype.open = function(method,url) {
 
 					if(method==='POST') {
-						var self = this;
+						var self = this,
+							diffTime,
+							diffSize,
+							perSec;
 						this.upload.onprogress = function (e) {
 						    if(self.process && e.lengthComputable) {
+
+					    		diffSize = e.loaded - (self.loaded || 0);
+					    		diffTime = self.lastLoaded ? (Date.now()/1000) - (self.lastLoaded/1000) : 0;
+					    		perSec = diffTime ? diffSize/diffTime : 0;
+
+						    	self.loaded = e.loaded;
+						    	self.lastLoaded = Date.now();
 						        self.process.percent = Math.round((e.loaded/e.total) * 100);
+						        self.process.speed = fsFormat.bytes(perSec);
+						        self.process.estimated = fsDate.duration(Math.round(perSec ? ((e.total - e.loaded)/perSec) : 0),{ abr: false });
 						    }
 						}
 
@@ -201,7 +213,7 @@ angular.module('fs-angular-upload').run(['$templateCache', function($templateCac
   'use strict';
 
   $templateCache.put('views/directives/uploadstatus.html',
-    "<div class=\"dialog\" ng-show=\"opened\"><div class=\"header\" layout=\"row\" layout-align=\"start center\"><div flex>{{message}}</div><a href ng-click=\"close()\"><md-icon>clear</md-icon></a></div><div class=\"files\"><table><tbody class=\"process\" ng-repeat=\"process in processes\"><tr ng-repeat=\"file in process.files\"><td class=\"file\" ng-class=\"{ error: process.status=='error' }\">{{file.name}} <span class=\"error-message\" ng-show=\"process.message\">{{process.message}}</span></td><td class=\"status\"><md-icon class=\"completed\" ng-show=\"process.status=='completed'\">check_circle</md-icon><md-icon class=\"error\" ng-show=\"process.status=='error'\">error</md-icon><md-tooltip>{{process.status=='error' ? 'Failed to upload' : process.percent + '%' }}</md-tooltip><md-progress-circular ng-show=\"process.status=='uploading'\" md-mode=\"determinate\" value=\"{{process.percent}}\" md-diameter=\"24\"></md-progress-circular></td></tr></tbody></table></div></div>"
+    "<div class=\"dialog\" ng-show=\"opened\"><div class=\"header\" layout=\"row\" layout-align=\"start center\"><div flex>{{message}}</div><a href ng-click=\"close()\"><md-icon>clear</md-icon></a></div><div class=\"files\"><table><tbody class=\"process\" ng-repeat=\"process in processes\"><tr ng-repeat=\"file in process.files\"><td class=\"file\" ng-class=\"{ error: process.status=='error' }\">{{file.name}} <span class=\"error-message\" ng-show=\"process.message\">{{process.message}}</span></td><td class=\"status\"><md-icon class=\"completed\" ng-show=\"process.status=='completed'\">check_circle</md-icon><md-icon class=\"error\" ng-show=\"process.status=='error'\">error</md-icon><md-tooltip ng-show=\"process.status=='error' || process.status=='uploading'\"><span ng-show=\"process.status=='error'\">Failed to upload</span> <span ng-show=\"process.status=='uploading'\">{{process.estimated}} remaining</span></md-tooltip><md-progress-circular ng-show=\"process.status=='uploading'\" md-mode=\"determinate\" value=\"{{process.percent}}\" md-diameter=\"24\"></md-progress-circular></td></tr></tbody></table></div></div>"
   );
 
 }]);

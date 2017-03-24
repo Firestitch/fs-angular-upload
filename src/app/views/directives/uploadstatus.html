@@ -16,8 +16,9 @@
 					<td class="status">
 						<md-icon class="completed" ng-show="process.status=='completed'">check_circle</md-icon>
 						<md-icon class="error" ng-show="process.status=='error'">error</md-icon>
-						<md-tooltip>
-							{{process.status=='error' ? 'Failed to upload' : process.percent + '%' }}
+						<md-tooltip ng-show="process.status=='error' || process.status=='uploading'">
+							<span ng-show="process.status=='error'">Failed to upload</span>
+							<span ng-show="process.status=='uploading'">{{process.estimated}} remaining</span>
 						</md-tooltip>
 						<md-progress-circular ng-show="process.status=='uploading'" md-mode="determinate" value="{{process.percent}}" md-diameter="24"></md-progress-circular>
 					</td>

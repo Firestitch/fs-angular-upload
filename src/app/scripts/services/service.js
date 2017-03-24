@@ -34,7 +34,7 @@
         }*/
 
 
-        this.$get = function ($compile,$rootScope,$timeout) {
+        this.$get = function ($compile,$rootScope,fsFormat,fsDate) {
 
 
 			var XMLHttpRequestOpenProxy = window.XMLHttpRequest.prototype.open;
@@ -76,10 +76,22 @@
 				window.XMLHttpRequest.prototype.open = function(method,url) {
 
 					if(method==='POST') {
-						var self = this;
+						var self = this,
+							diffTime,
+							diffSize,
+							perSec;
 						this.upload.onprogress = function (e) {
 						    if(self.process && e.lengthComputable) {
+
+					    		diffSize = e.loaded - (self.loaded || 0);
+					    		diffTime = self.lastLoaded ? (Date.now()/1000) - (self.lastLoaded/1000) : 0;
+					    		perSec = diffTime ? diffSize/diffTime : 0;
+
+						    	self.loaded = e.loaded;
+						    	self.lastLoaded = Date.now();
 						        self.process.percent = Math.round((e.loaded/e.total) * 100);
+						        self.process.speed = fsFormat.bytes(perSec);
+						        self.process.estimated = fsDate.duration(Math.round(perSec ? ((e.total - e.loaded)/perSec) : 0),{ abr: false });
 						    }
 						}
 
