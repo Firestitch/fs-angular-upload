@@ -9,15 +9,15 @@
 		<table>
 			<tbody class="process" ng-repeat="process in processes">
 				<tr ng-repeat="file in process.files">
-					<td class="file" ng-class="{ error: process.status=='error' }">
-						{{file.name}}
-						<span class="error-message" ng-show="process.message">{{process.message}}</span>
+					<td class="file" ng-class="{ error: process.status=='error', 'has-message': !!process.message }">
+						<span class="file-name">{{file.name}}</span>
+						<span class="error-message">{{process.message}}</span>
 					</td>
 					<td class="status">
 						<md-icon class="completed" ng-show="process.status=='completed'">check_circle</md-icon>
 						<md-icon class="error" ng-show="process.status=='error'">error</md-icon>
-						<md-tooltip ng-show="process.status=='error' || process.status=='uploading'">
-							<span ng-show="process.status=='error'">Failed to upload</span>
+						<md-tooltip ng-show="process.message && (process.status=='error' || process.status=='uploading')">
+							<span ng-show="process.status=='error'">{{process.message}}</span>
 							<span ng-show="process.status=='uploading'">{{process.estimated}} remaining</span>
 						</md-tooltip>
 						<md-progress-circular ng-show="process.status=='uploading'" md-mode="determinate" value="{{process.percent}}" md-diameter="24"></md-progress-circular>

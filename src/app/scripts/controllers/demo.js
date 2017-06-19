@@ -4,18 +4,27 @@
 angular.module('app')
   .controller('DemoCtrl', function ($scope,Upload) {
 
-    $scope.upload = function (files) {
+    $scope.upload = function (files,fail,sleep) {
     	if(!files)
     		return;
 
     	var data = { asd: 'asdasdasd', asdss: 'asdasdasd' };
+
+    	if(fail) {
+    		data.exception = 'Failllll!';
+    	}
+
+    	if(sleep) {
+    		data.sleep = sleep;
+    	}
+
     	angular.forEach(files,function(file,index) {
     		data[file + '_' + index] = file;
     	});
 
 
         Upload.upload({
-            url: 'https://service.firestitch.com/api/dummy',
+            url: 'http://service.local.firestitch.com/api/dummy',
             data: data
         }).then(function (resp) {
             //console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);

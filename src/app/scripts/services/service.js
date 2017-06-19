@@ -34,26 +34,34 @@
         }*/
 
 
-        this.$get = function ($compile,$rootScope,fsFormat,fsDate) {
+        this.$get = function ($compile,$rootScope,fsFormat,fsDate,$timeout) {
 
-
-			var XMLHttpRequestOpenProxy = window.XMLHttpRequest.prototype.open;
-			var XMLHttpRequestSendProxy = window.XMLHttpRequest.prototype.send;
-			var FormDataProxy = window.FormData.prototype.append;
-			var processes = [];
-			var status = { uploading: 0, completed: 0, error: 0 };
-			var scope = $rootScope.$new();
-			var fsUploadStatus = null;
-            var service = {
-            	init: init,
-            	processes: processes,
-            	status: status,
-            	clear: clear
-            };
+			var XMLHttpRequestOpenProxy = window.XMLHttpRequest.prototype.open,
+				XMLHttpRequestSendProxy = window.XMLHttpRequest.prototype.send,
+				FormDataProxy = window.FormData.prototype.append,
+				processes = [],
+				status = { uploading: 0, completed: 0, error: 0 },
+				scope = $rootScope.$new(),
+				fsUploadStatus = null,
+				events = {},
+				service = {
+	            	init: init,
+	            	processes: processes,
+	            	status: status,
+	            	clear: clear,
+	            	on: on
+	            };
 
             function clear() {
             	processes.splice(0);
             	update();
+            }
+
+            function on(event,func) {
+            	if(!events[event]) {
+            		events[event] = [];
+            	}
+            	events[event].push(func);
             }
 
             function update() {
@@ -72,14 +80,39 @@
             	});
             }
 
+            function triggerEvent(event) {
+            	var items = events[event] || [];
+            	angular.forEach(items,function(func) {
+            		angular.bind(this,func,status)();
+            	});
+            }
+
             function init() {
+
+				if(!fsUploadStatus) {
+					fsUploadStatus = angular.element('<fs-upload-status>');
+					angular.element(document.body).append(fsUploadStatus);
+				}
+
 				window.XMLHttpRequest.prototype.open = function(method,url) {
 
 					if(method==='POST') {
+
 						var self = this,
 							diffTime,
 							diffSize,
 							perSec;
+
+						this.onreadystatechange = function (e) {
+							if(self.process) {
+								if(self.status>=400) {
+						    		self.process.status = 'error';
+						    		self.process.message = self.statusText;
+						    		update();
+						    	}
+							}
+						}
+
 						this.upload.onprogress = function (e) {
 						    if(self.process && e.lengthComputable) {
 
@@ -100,12 +133,7 @@
 								scope.opened = true;
 								self.process.status = 'uploading';
 								update();
-
-								if(!fsUploadStatus) {
-									fsUploadStatus = angular.element('<fs-upload-status>');
-									angular.element(document.body).append(fsUploadStatus);
-									$compile(fsUploadStatus)(scope);
-								}
+								triggerEvent('uploading');
 							}
 						}
 
@@ -115,13 +143,18 @@
 						    		self.process.status = 'completed';
 						    	}
 						    	update();
+						    	if(self.process.status=='completed') {
+						    		triggerEvent('completed');
+						    	}
 							}
 						}
 
 						this.upload.onerror = function (e) {
 						    if(self.process) {
 						    	self.process.status = 'error';
+						    	self.process.message = 'Failed to upload';
 						    	update();
+						    	triggerEvent('error');
 							}
 						}
 

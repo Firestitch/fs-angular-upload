@@ -3,27 +3,63 @@
     'use strict';
 
     angular.module('fs-angular-upload',['fs-angular-format','fs-angular-date'])
-    .directive('fsUploadStatus', function($location,fsUpload) {
+    .directive('fsUploadStatus', function($location,fsUpload,$timeout) {
         return {
             templateUrl: 'views/directives/uploadstatus.html',
             restrict: 'E',
             controller: function($scope) {
-            	$scope.opened = true;
+
+            	$scope.opened = false;
             	$scope.processes = fsUpload.processes;
-            	$scope.status = fsUpload.status;
+
+            	fsUpload.on('uploading',updateMessage);
+            	fsUpload.on('completed',updateMessage);
 
             	$scope.close = function() {
             		$scope.opened = false;
-            		fsUpload.clear();
+            		angular.forEach($scope.processes,function(process) {
+            			if(process.status!='uploading') {
+				    		var index = $scope.processes.indexOf(process);
+				    		if(index>=0) {
+				    			$scope.processes.splice(index);
+				    		}
+            			}
+            		});
             	}
 
-            	var watch = $scope.$watchCollection('status',function(status) {
-            		if(status.uploading) {
-				        $scope.message = 'Uploading ' + status.uploading + (status.uploading===1 ? ' Item' : ' Items');
-            		} else if(status.completed) {
-            			$scope.message = 'Uploaded ' + status.completed + (status.completed===1 ? ' Item' : ' Items');
+            	$scope.showMessage = function(process) {
+
+            		if(!process.message) {
+            			return;
             		}
-            	});
+
+            		process.preview = !process.preview;
+            	}
+
+            	var autoCloseTimeout;
+            	function autoClose() {
+            		$timeout.cancel(autoCloseTimeout);
+            		autoCloseTimeout = $timeout(function() {
+            			if($scope.status.uploading) {
+            				return autoClose();
+            			}
+            			$scope.close();
+            		},15000);
+            	}
+
+            	function updateMessage(status) {
+
+            		if(status.uploading) {
+            			$scope.opened = true;
+            		}
+
+            		autoClose();
+            		if(status.uploading) {
+				        $scope.message = 'Uploading ' + status.uploading + (status.uploading===1 ? ' File' : ' Files');
+            		} else if(status.completed) {
+            			$scope.message = 'Uploaded ' + status.completed + (status.completed===1 ? ' File' : ' Files');
+            		}
+            	}
             }
         };
     })
@@ -81,26 +117,34 @@
         }*/
 
 
-        this.$get = function ($compile,$rootScope,fsFormat,fsDate) {
+        this.$get = function ($compile,$rootScope,fsFormat,fsDate,$timeout) {
 
-
-			var XMLHttpRequestOpenProxy = window.XMLHttpRequest.prototype.open;
-			var XMLHttpRequestSendProxy = window.XMLHttpRequest.prototype.send;
-			var FormDataProxy = window.FormData.prototype.append;
-			var processes = [];
-			var status = { uploading: 0, completed: 0, error: 0 };
-			var scope = $rootScope.$new();
-			var fsUploadStatus = null;
-            var service = {
-            	init: init,
-            	processes: processes,
-            	status: status,
-            	clear: clear
-            };
+			var XMLHttpRequestOpenProxy = window.XMLHttpRequest.prototype.open,
+				XMLHttpRequestSendProxy = window.XMLHttpRequest.prototype.send,
+				FormDataProxy = window.FormData.prototype.append,
+				processes = [],
+				status = { uploading: 0, completed: 0, error: 0 },
+				scope = $rootScope.$new(),
+				fsUploadStatus = null,
+				events = {},
+				service = {
+	            	init: init,
+	            	processes: processes,
+	            	status: status,
+	            	clear: clear,
+	            	on: on
+	            };
 
             function clear() {
             	processes.splice(0);
             	update();
+            }
+
+            function on(event,func) {
+            	if(!events[event]) {
+            		events[event] = [];
+            	}
+            	events[event].push(func);
             }
 
             function update() {
@@ -119,14 +163,39 @@
             	});
             }
 
+            function triggerEvent(event) {
+            	var items = events[event] || [];
+            	angular.forEach(items,function(func) {
+            		angular.bind(this,func,status)();
+            	});
+            }
+
             function init() {
+
+				if(!fsUploadStatus) {
+					fsUploadStatus = angular.element('<fs-upload-status>');
+					angular.element(document.body).append(fsUploadStatus);
+				}
+
 				window.XMLHttpRequest.prototype.open = function(method,url) {
 
 					if(method==='POST') {
+
 						var self = this,
 							diffTime,
 							diffSize,
 							perSec;
+
+						this.onreadystatechange = function (e) {
+							if(self.process) {
+								if(self.status>=400) {
+						    		self.process.status = 'error';
+						    		self.process.message = self.statusText;
+						    		update();
+						    	}
+							}
+						}
+
 						this.upload.onprogress = function (e) {
 						    if(self.process && e.lengthComputable) {
 
@@ -147,12 +216,7 @@
 								scope.opened = true;
 								self.process.status = 'uploading';
 								update();
-
-								if(!fsUploadStatus) {
-									fsUploadStatus = angular.element('<fs-upload-status>');
-									angular.element(document.body).append(fsUploadStatus);
-									$compile(fsUploadStatus)(scope);
-								}
+								triggerEvent('uploading');
 							}
 						}
 
@@ -162,13 +226,18 @@
 						    		self.process.status = 'completed';
 						    	}
 						    	update();
+						    	if(self.process.status=='completed') {
+						    		triggerEvent('completed');
+						    	}
 							}
 						}
 
 						this.upload.onerror = function (e) {
 						    if(self.process) {
 						    	self.process.status = 'error';
+						    	self.process.message = 'Failed to upload';
 						    	update();
+						    	triggerEvent('error');
 							}
 						}
 
@@ -213,7 +282,7 @@ angular.module('fs-angular-upload').run(['$templateCache', function($templateCac
   'use strict';
 
   $templateCache.put('views/directives/uploadstatus.html',
-    "<div class=\"dialog\" ng-show=\"opened\"><div class=\"header\" layout=\"row\" layout-align=\"start center\"><div flex>{{message}}</div><a href ng-click=\"close()\"><md-icon>clear</md-icon></a></div><div class=\"files\"><table><tbody class=\"process\" ng-repeat=\"process in processes\"><tr ng-repeat=\"file in process.files\"><td class=\"file\" ng-class=\"{ error: process.status=='error' }\">{{file.name}} <span class=\"error-message\" ng-show=\"process.message\">{{process.message}}</span></td><td class=\"status\"><md-icon class=\"completed\" ng-show=\"process.status=='completed'\">check_circle</md-icon><md-icon class=\"error\" ng-show=\"process.status=='error'\">error</md-icon><md-tooltip ng-show=\"process.status=='error' || process.status=='uploading'\"><span ng-show=\"process.status=='error'\">Failed to upload</span> <span ng-show=\"process.status=='uploading'\">{{process.estimated}} remaining</span></md-tooltip><md-progress-circular ng-show=\"process.status=='uploading'\" md-mode=\"determinate\" value=\"{{process.percent}}\" md-diameter=\"24\"></md-progress-circular></td></tr></tbody></table></div></div>"
+    "<div class=\"dialog\" ng-show=\"opened\"><div class=\"header\" layout=\"row\" layout-align=\"start center\"><div flex>{{message}}</div><a href ng-click=\"close()\"><md-icon>clear</md-icon></a></div><div class=\"files\"><table><tbody class=\"process\" ng-repeat=\"process in processes\"><tr ng-repeat=\"file in process.files\"><td class=\"file\" ng-class=\"{ error: process.status=='error', 'has-message': !!process.message }\"><span class=\"file-name\">{{file.name}}</span> <span class=\"error-message\">{{process.message}}</span></td><td class=\"status\"><md-icon class=\"completed\" ng-show=\"process.status=='completed'\">check_circle</md-icon><md-icon class=\"error\" ng-show=\"process.status=='error'\">error</md-icon><md-tooltip ng-show=\"process.message && (process.status=='error' || process.status=='uploading')\"><span ng-show=\"process.status=='error'\">{{process.message}}</span> <span ng-show=\"process.status=='uploading'\">{{process.estimated}} remaining</span></md-tooltip><md-progress-circular ng-show=\"process.status=='uploading'\" md-mode=\"determinate\" value=\"{{process.percent}}\" md-diameter=\"24\"></md-progress-circular></td></tr></tbody></table></div></div>"
   );
 
 }]);

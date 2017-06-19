@@ -46,6 +46,18 @@ fs-upload-status td.file {
     width: 50%;
 }
 
+fs-upload-status td.file.has-message:hover .file-name {
+	display: none;
+}
+
+fs-upload-status td.file .error-message {
+	display: none;
+}
+
+fs-upload-status td.file.has-message:hover .error-message {
+	display: block;
+}
+
 fs-upload-status td.file.error {
 	color: #DB4437;
 }
