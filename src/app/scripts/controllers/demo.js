@@ -11,7 +11,8 @@
     	var data = { asd: 'asdasdasd', asdss: 'asdasdasd' };
 
     	if(fail) {
-    		data.exception = 'Failllll!';
+    		data.exception = 'Failed exception message';
+    		data.state ='fail';
     	}
 
     	if(sleep) {
@@ -24,7 +25,7 @@
 
 
         Upload.upload({
-            url: 'http://service.local.firestitch.com/api/dummy',
+            url: 'http://boilerplate.local.firestitch.com/api/dummy/upload',
             data: data
         }).then(function (resp) {
             //console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);

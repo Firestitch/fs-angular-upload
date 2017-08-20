@@ -9,10 +9,12 @@
             controller: function($scope) {
 
             	$scope.opened = false;
+            	$scope.status = fsUpload.status;
             	$scope.processes = fsUpload.processes;
 
             	fsUpload.on('uploading',updateMessage);
             	fsUpload.on('completed',updateMessage);
+				fsUpload.on('error',updateMessage);
 
             	$scope.close = function() {
             		$scope.opened = false;
@@ -53,11 +55,24 @@
             		}
 
             		autoClose();
-            		if(status.uploading) {
-				        $scope.message = 'Uploading ' + status.uploading + (status.uploading===1 ? ' File' : ' Files');
-            		} else if(status.completed) {
-            			$scope.message = 'Uploaded ' + status.completed + (status.completed===1 ? ' File' : ' Files');
-            		}
+
+            		//$scope.$apply();
+
+        			/*if(status.uploading) {
+        				$scope.status.uploading += status.uploading;
+        			}
+
+        			if(status.completed) {
+        				$scope.status.completed += status.completed;
+        				$scope.status.uploading -= status.completed;
+        			}
+
+        			if(status.error) {
+        				$scope.status.error += status.error;
+        				$scope.status.uploading -= status.error;
+        			}
+
+        			*/
             	}
             }
         };

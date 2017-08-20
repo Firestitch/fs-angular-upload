@@ -6,33 +6,7 @@
 
     	var provider = this;
 
-    	provider.onloadstart = null
-
-
-/*        var provider = this;
-
-        this._options = {   url: null,
-                            data: {},
-                            events: {
-                                begin: null
-                            }};
-
-        this.options = function(options) {
-
-            if(!arguments.length)
-                return this._options;
-
-            this._options = angular.merge({},this._options,options);
-        }
-
-        this.option = function(name, value) {
-
-             if(arguments.length==1)
-                return this._options[arguments[0]];
-
-            this._options[name] = value;
-        }*/
-
+    	provider.onloadstart = null;
 
         this.$get = function ($compile,$rootScope,fsFormat,fsDate,$timeout) {
 
@@ -158,9 +132,7 @@
 							}
 						}
 
-						this.upload.onabort = function (e) {
-
-						}
+						this.upload.onabort = function (e) {}
 					}
 
 					return XMLHttpRequestOpenProxy.apply(this, [].slice.call(arguments));
