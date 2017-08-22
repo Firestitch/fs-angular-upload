@@ -1,14 +1,14 @@
 (function () {
     'use strict';
 
-    angular.module('fs-angular-upload')
+    angular.module('fs-angular-upload',['fs-angular-dock','fs-angular-date','fs-angular-format'])
     .provider('fsUpload', function () {
 
     	var provider = this;
 
     	provider.onloadstart = null;
 
-        this.$get = function ($compile,$rootScope,fsFormat,fsDate,$timeout) {
+        this.$get = function ($compile, $rootScope, fsFormat, fsDate, $timeout, fsDock) {
 
 			var XMLHttpRequestOpenProxy = window.XMLHttpRequest.prototype.open,
 				XMLHttpRequestSendProxy = window.XMLHttpRequest.prototype.send,
@@ -16,7 +16,6 @@
 				processes = [],
 				status = { uploading: 0, completed: 0, error: 0, completed: 0 },
 				scope = $rootScope.$new(),
-				fsUploadStatus = null,
 				events = {},
 				service = {
 	            	init: init,
@@ -69,10 +68,65 @@
 
             function init() {
 
-				if(!fsUploadStatus) {
-					fsUploadStatus = angular.element('<fs-upload-status>');
-					angular.element(document.body).append(fsUploadStatus);
-				}
+            	on('uploading',updateMessage);
+            	on('completed',updateMessage);
+				on('error',updateMessage);
+
+            	var autoCloseTimeout;
+            	function autoClose() {
+            		$timeout.cancel(autoCloseTimeout);
+            		autoCloseTimeout = $timeout(function() {
+            			if($scope.status.uploading) {
+            				return autoClose();
+            			}
+            			$scope.close();
+            		},22215 * 1000);
+            	}
+
+            	function updateMessage(status) {
+
+            		if(status.uploading) {
+            			var title = '<span ng-if="status.uploading">Uploading&nbsp;{{status.uploading}}&nbsp;<ng-pluralize count="status.uploading" when="{ \'one\': \'file\', \'other\': \'files\' }"></ng-pluralize><span ng-if="status.processing">,&nbsp;</span></span>\
+									<span ng-if="status.processing">Processing&nbsp;{{status.processing}}&nbsp;<ng-pluralize count="status.processing" when="{ \'one\': \'file\', \'other\': \'files\' }"></ng-pluralize></span>\
+									<span ng-if="!status.uploading && !status.processing && status.completed">Uploaded&nbsp;{{status.completed}}&nbsp;<ng-pluralize count="status.completed" when="{ \'one\': \'file\', \'other\': \'files\' }"></ng-pluralize><span ng-if="!status.uploading && status.error">,</span></span>\
+									<span ng-if="!status.uploading && !status.processing && status.error">{{status.error}}&nbsp;<ng-pluralize count="status.error" when="{ \'one\': \'upload\', \'other\': \'uploads\' }"></ng-pluralize>&nbsp;failed</span>';
+
+						fsDock.show(
+						    {
+						    	templateUrl: 'views/directives/uploadstatus.html',
+						    	title: title,
+						    	anchor: 'right',
+						    	class: 'fs-upload',
+						    	controller: ['$scope','processes', 'status',function($scope, processes, status) {
+						    		$scope.processes = processes;
+						    		$scope.status = status;
+
+					            	$scope.hide = function() {
+					            		fsDock.hide();
+					            		angular.forEach($scope.processes,function(process) {
+					            			if(process.status!='uploading') {
+									    		var index = $scope.processes.indexOf(process);
+									    		if(index>=0) {
+									    			$scope.processes.splice(index);
+									    		}
+					            			}
+					            		});
+					            	}
+						    	}],
+						    	resolve: {
+						    		status: function() {
+						    			return status;
+						    		},
+						    		processes: function() {
+						    			return processes;
+						    		}
+						    	}
+						    });
+
+            		}
+
+            		autoClose();
+            	}
 
 				window.XMLHttpRequest.prototype.open = function(method,url) {
 
@@ -153,7 +207,7 @@
 						}
 
 						this.upload.onabort = function (e) {
-							debugger;
+
 						}
 					}
 

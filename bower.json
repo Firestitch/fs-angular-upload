@@ -7,7 +7,8 @@
   ],
   "dependencies": {
     "fs-angular-format": "^1.0.0",
-    "fs-angular-date": "^1.0.0"
+    "fs-angular-date": "^1.0.0",
+    "fs-angular-dock": "^1.0.0"
   },
   "authors": [
     "Firestitch Inc."
