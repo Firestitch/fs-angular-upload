@@ -35,30 +35,34 @@ fs-upload-status .files table {
 
 fs-upload-status td.file,
 fs-upload-status td.status {
-	padding: 7px 8px;
+	padding: 0 8px;
 }
 
 fs-upload-status td.file {
     font-size: 13px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     width: 50%;
+    cursor: pointer;
+   	height: 40px;
+    padding: 4px 7px;
 }
 
-fs-upload-status td.file.has-message:hover .file-name {
+fs-upload-status td.file .wrap {
+}
+
+fs-upload-status td.file .more {
+	font-size: 12px;
 	display: none;
 }
 
-fs-upload-status td.file .error-message {
-	display: none;
+fs-upload-status td.file .more * {
+	padding-top: 2px;
 }
 
-fs-upload-status td.file.has-message:hover .error-message {
+fs-upload-status td.file:hover .more {
 	display: block;
 }
 
-fs-upload-status td.file.error {
+fs-upload-status td.file.error .error-message {
 	color: #DB4437;
 }
 

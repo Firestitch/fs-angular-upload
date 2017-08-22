@@ -45,7 +45,7 @@
             				return autoClose();
             			}
             			$scope.close();
-            		},15000);
+            		},22215 * 1000);
             	}
 
             	function updateMessage(status) {

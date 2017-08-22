@@ -14,7 +14,7 @@
 				XMLHttpRequestSendProxy = window.XMLHttpRequest.prototype.send,
 				FormDataProxy = window.FormData.prototype.append,
 				processes = [],
-				status = { uploading: 0, completed: 0, error: 0 },
+				status = { uploading: 0, completed: 0, error: 0, completed: 0 },
 				scope = $rootScope.$new(),
 				fsUploadStatus = null,
 				events = {},
@@ -41,14 +41,20 @@
             function update() {
             	status.uploading = 0;
             	status.completed = 0;
+            	status.processing = 0;
             	status.error = 0;
 
             	angular.forEach(processes,function(process) {
             		var files = process.files.length;
             		if(process.status=='uploading')
             			status.uploading += files;
+
             		else if(process.status=='completed')
             			status.completed += files;
+
+            		else if(process.status=='processing')
+            			status.processing += files;
+
             		else if(process.status=='error')
             			status.error += files;
             	});
@@ -77,18 +83,27 @@
 							diffSize,
 							perSec;
 
-						this.onreadystatechange = function (e) {
+						this.onreadystatechange = function(e) {
+
 							if(self.process) {
 								if(self.status>=400) {
 						    		self.process.status = 'error';
 						    		self.process.message = self.statusText;
-						    		update();
+						    	} else {
+						    		if(e.target.status>400 || !e.target.status) {
+						    			self.process.status = 'error';
+						    			self.process.message = self.statusText;
+						    		} else if(e.target.readyState==4) {
+						    			self.process.status = 'completed';
+						    			self.process.message = '';
+						    		}
 						    	}
+						    	update();
 							}
 						}
 
 						this.upload.onprogress = function (e) {
-						    if(self.process && e.lengthComputable) {
+							 if(self.process && e.lengthComputable) {
 
 					    		diffSize = e.loaded - (self.loaded || 0);
 					    		diffTime = self.lastLoaded ? (Date.now()/1000) - (self.lastLoaded/1000) : 0;
@@ -97,9 +112,14 @@
 						    	self.loaded = e.loaded;
 						    	self.lastLoaded = Date.now();
 						        self.process.percent = Math.round((e.loaded/e.total) * 100);
-						        self.process.speed = fsFormat.bytes(perSec);
+						        self.process.loaded = fsFormat.bytes(e.loaded);
+						        self.process.total = fsFormat.bytes(e.total);
 						        self.process.estimated = fsDate.duration(Math.round(perSec ? ((e.total - e.loaded)/perSec) : 0),{ abr: false });
 						    }
+						}
+
+						this.upload.onload = function(e) {
+
 						}
 
 						this.upload.onloadstart = function() {
@@ -112,13 +132,13 @@
 						}
 
 						this.upload.onloadend = function (e) {
-						    if(self.process) {
+							if(self.process) {
 						    	if(self.process.status!='error') {
-						    		self.process.status = 'completed';
+						    		self.process.status = 'processing';
 						    	}
 						    	update();
-						    	if(self.process.status=='completed') {
-						    		triggerEvent('completed');
+						    	if(self.process.status=='processing') {
+						    		triggerEvent('processing');
 						    	}
 							}
 						}
@@ -132,7 +152,9 @@
 							}
 						}
 
-						this.upload.onabort = function (e) {}
+						this.upload.onabort = function (e) {
+							debugger;
+						}
 					}
 
 					return XMLHttpRequestOpenProxy.apply(this, [].slice.call(arguments));

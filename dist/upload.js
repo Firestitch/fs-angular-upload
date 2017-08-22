@@ -46,7 +46,7 @@
             				return autoClose();
             			}
             			$scope.close();
-            		},15000);
+            		},22215 * 1000);
             	}
 
             	function updateMessage(status) {
@@ -112,7 +112,7 @@
 				XMLHttpRequestSendProxy = window.XMLHttpRequest.prototype.send,
 				FormDataProxy = window.FormData.prototype.append,
 				processes = [],
-				status = { uploading: 0, completed: 0, error: 0 },
+				status = { uploading: 0, completed: 0, error: 0, completed: 0 },
 				scope = $rootScope.$new(),
 				fsUploadStatus = null,
 				events = {},
@@ -139,14 +139,20 @@
             function update() {
             	status.uploading = 0;
             	status.completed = 0;
+            	status.processing = 0;
             	status.error = 0;
 
             	angular.forEach(processes,function(process) {
             		var files = process.files.length;
             		if(process.status=='uploading')
             			status.uploading += files;
+
             		else if(process.status=='completed')
             			status.completed += files;
+
+            		else if(process.status=='processing')
+            			status.processing += files;
+
             		else if(process.status=='error')
             			status.error += files;
             	});
@@ -175,18 +181,27 @@
 							diffSize,
 							perSec;
 
-						this.onreadystatechange = function (e) {
+						this.onreadystatechange = function(e) {
+
 							if(self.process) {
 								if(self.status>=400) {
 						    		self.process.status = 'error';
 						    		self.process.message = self.statusText;
-						    		update();
+						    	} else {
+						    		if(e.target.status>400 || !e.target.status) {
+						    			self.process.status = 'error';
+						    			self.process.message = self.statusText;
+						    		} else if(e.target.readyState==4) {
+						    			self.process.status = 'completed';
+						    			self.process.message = '';
+						    		}
 						    	}
+						    	update();
 							}
 						}
 
 						this.upload.onprogress = function (e) {
-						    if(self.process && e.lengthComputable) {
+							 if(self.process && e.lengthComputable) {
 
 					    		diffSize = e.loaded - (self.loaded || 0);
 					    		diffTime = self.lastLoaded ? (Date.now()/1000) - (self.lastLoaded/1000) : 0;
@@ -195,9 +210,14 @@
 						    	self.loaded = e.loaded;
 						    	self.lastLoaded = Date.now();
 						        self.process.percent = Math.round((e.loaded/e.total) * 100);
-						        self.process.speed = fsFormat.bytes(perSec);
+						        self.process.loaded = fsFormat.bytes(e.loaded);
+						        self.process.total = fsFormat.bytes(e.total);
 						        self.process.estimated = fsDate.duration(Math.round(perSec ? ((e.total - e.loaded)/perSec) : 0),{ abr: false });
 						    }
+						}
+
+						this.upload.onload = function(e) {
+
 						}
 
 						this.upload.onloadstart = function() {
@@ -210,13 +230,13 @@
 						}
 
 						this.upload.onloadend = function (e) {
-						    if(self.process) {
+							if(self.process) {
 						    	if(self.process.status!='error') {
-						    		self.process.status = 'completed';
+						    		self.process.status = 'processing';
 						    	}
 						    	update();
-						    	if(self.process.status=='completed') {
-						    		triggerEvent('completed');
+						    	if(self.process.status=='processing') {
+						    		triggerEvent('processing');
 						    	}
 							}
 						}
@@ -230,7 +250,9 @@
 							}
 						}
 
-						this.upload.onabort = function (e) {}
+						this.upload.onabort = function (e) {
+							debugger;
+						}
 					}
 
 					return XMLHttpRequestOpenProxy.apply(this, [].slice.call(arguments));
@@ -269,7 +291,7 @@ angular.module('fs-angular-upload').run(['$templateCache', function($templateCac
   'use strict';
 
   $templateCache.put('views/directives/uploadstatus.html',
-    "<div class=\"dialog\" ng-show=\"opened\"><div class=\"header\" layout=\"row\" layout-align=\"start center\"><div flex><span ng-if=\"status.uploading\">Uploading&nbsp;{{status.uploading}}&nbsp;<ng-pluralize count=\"status.uploading\" when=\"{ 'one': 'file', 'other': 'files' }\"></ng-pluralize></span> <span ng-if=\"!status.uploading && status.completed\">Uploaded&nbsp;{{status.completed}}&nbsp;<ng-pluralize count=\"status.completed\" when=\"{ 'one': 'file', 'other': 'files' }\"></ng-pluralize><span ng-if=\"!status.uploading && status.error\">,</span></span> <span ng-if=\"!status.uploading && status.error\">{{status.error}}&nbsp;<ng-pluralize count=\"status.error\" when=\"{ 'one': 'upload', 'other': 'uploads' }\"></ng-pluralize>&nbsp;failed</span></div><a href ng-click=\"close()\"><md-icon>clear</md-icon></a></div><div class=\"files\"><table><tbody class=\"process\" ng-repeat=\"process in processes\"><tr ng-repeat=\"file in process.files\"><td class=\"file\" ng-class=\"{ error: process.status=='error', 'has-message': !!process.message }\"><span class=\"file-name\">{{file.name}}</span> <span class=\"error-message\">{{process.message}}</span></td><td class=\"status\"><md-icon class=\"completed\" ng-show=\"process.status=='completed'\">check_circle</md-icon><md-icon class=\"error\" ng-show=\"process.status=='error'\">error</md-icon><md-tooltip ng-show=\"process.message && (process.status=='error' || process.status=='uploading')\"><span ng-show=\"process.status=='error'\">{{process.message}}</span> <span ng-show=\"process.status=='uploading'\">{{process.estimated}} remaining</span></md-tooltip><md-progress-circular ng-show=\"process.status=='uploading'\" md-mode=\"determinate\" value=\"{{process.percent}}\" md-diameter=\"24\"></md-progress-circular></td></tr></tbody></table></div></div>"
+    "<div class=\"dialog\" ng-show=\"opened\"><div class=\"header\" layout=\"row\" layout-align=\"start center\"><div flex><span ng-if=\"status.uploading\">Uploading&nbsp;{{status.uploading}}&nbsp;<ng-pluralize count=\"status.uploading\" when=\"{ 'one': 'file', 'other': 'files' }\"></ng-pluralize></span> <span ng-if=\"status.processing\">Processing&nbsp;{{status.processing}}&nbsp;<ng-pluralize count=\"status.processing\" when=\"{ 'one': 'file', 'other': 'files' }\"></ng-pluralize></span> <span ng-if=\"!status.uploading && !status.processing && status.completed\">Uploaded&nbsp;{{status.completed}}&nbsp;<ng-pluralize count=\"status.completed\" when=\"{ 'one': 'file', 'other': 'files' }\"></ng-pluralize><span ng-if=\"!status.uploading && status.error\">,</span></span> <span ng-if=\"!status.uploading && !status.processing && status.error\">{{status.error}}&nbsp;<ng-pluralize count=\"status.error\" when=\"{ 'one': 'upload', 'other': 'uploads' }\"></ng-pluralize>&nbsp;failed</span></div><a href ng-click=\"close()\"><md-icon>clear</md-icon></a></div><div class=\"files\"><table><tbody class=\"process\" ng-repeat=\"process in processes\"><tr ng-repeat=\"file in process.files\"><td class=\"file\" ng-class=\"{ error: process.status=='error', 'has-message': !!process.message }\"><div class=\"wrap\"><div class=\"file-name\">{{file.name}}</div><div class=\"error-message\" ng-if=\"process.message\">{{process.message}}</div><div class=\"more\"><div ng-if=\"process.status=='uploading'\">{{process.loaded}}/{{process.total}}, {{process.estimated}} left</div><div ng-if=\"process.status=='processing'\">Processing...</div></div></div></td><td class=\"status\"><md-icon class=\"completed\" ng-if=\"process.status=='completed'\">check_circle</md-icon><md-icon class=\"error\" ng-if=\"process.status=='error'\">error</md-icon><md-tooltip ng-if=\"process.status=='uploading' || process.status=='processing'\"><span ng-if=\"process.status=='processing'\">Processing</span> <span ng-if=\"process.status=='uploading'\">Uploading</span></md-tooltip><md-progress-circular ng-if=\"process.status=='uploading'\" md-mode=\"determinate\" value=\"{{process.percent}}\" md-diameter=\"24\"></md-progress-circular><md-progress-circular ng-if=\"process.status=='processing'\" md-mode=\"indeterminate\" md-diameter=\"24\"></md-progress-circular></td></tr></tbody></table></div></div>"
   );
 
 }]);

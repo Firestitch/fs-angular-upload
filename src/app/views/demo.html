@@ -1,3 +1,18 @@
 <div class="md-button " ngf-select="upload($files)" ngf-multiple="true">Upload on file select</div>
-<div class="md-button " ngf-select="upload($files,true)" ngf-multiple="true">Upload on file select (Fail)</div>
-<div class="md-button " ngf-select="upload($files,true,15)" ngf-multiple="true">Upload on file select (15 second delay)</div>
+<div class="md-button " ngf-select="upload($files,false)" ngf-multiple="true">Upload on file select</div>
+<div class="md-button " ngf-select="upload($files,true,5)" ngf-multiple="true">Upload on file select (5 second processing and fail)</div>
+<div class="md-button " ngf-select="upload($files,false	,5)" ngf-multiple="true">Upload on file select (5 second processing)</div>
+
+
+<p>
+	<h3>Status</h3>
+	{{status}}
+</p>
+
+
+<p>
+	<h3>Processes</h3>
+	{{processes}}
+</p>
+
+
