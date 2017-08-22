@@ -14,7 +14,7 @@
 				XMLHttpRequestSendProxy = window.XMLHttpRequest.prototype.send,
 				FormDataProxy = window.FormData.prototype.append,
 				processes = [],
-				status = { uploading: 0, completed: 0, error: 0, completed: 0 },
+				status = { uploading: 0, completed: 0, error: 0, processing: 0 },
 				scope = $rootScope.$new(),
 				events = {},
 				service = {
@@ -80,7 +80,7 @@
             				return autoClose();
             			}
             			$scope.close();
-            		},22215 * 1000);
+            		},20 * 1000);
             	}
 
             	function updateMessage(status) {
@@ -172,10 +172,6 @@
 						    }
 						}
 
-						this.upload.onload = function(e) {
-
-						}
-
 						this.upload.onloadstart = function() {
 							if(self.process) {
 								scope.opened = true;
@@ -204,10 +200,6 @@
 						    	update();
 						    	triggerEvent('error');
 							}
-						}
-
-						this.upload.onabort = function (e) {
-
 						}
 					}
 
