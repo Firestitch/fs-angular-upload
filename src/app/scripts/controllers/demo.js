@@ -8,13 +8,12 @@
 	$scope.status = fsUpload.status;
 	$scope.processes = fsUpload.processes;
 
-    $scope.upload = function (files,fail,sleep) {
+    $scope.upload = function (files, fail, sleep, data) {
     	if(!files.length)
     		return;
 
     	angular.forEach(files,function(file,index) {
-
-	    	var data = { asd: 'asdasdasd', asdss: 'asdasdasd' };
+    		data = data || {};
 
 	    	if(fail) {
 	    		data.exception = 'Failed exception message';
@@ -32,9 +31,9 @@
 	            url: 'http://boilerplate.local.firestitch.com/api/dummy/upload',
 	            data: data
 	        }).then(function (resp) {
-	            //console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);
+	            $scope.response = 'Successfully upload. ' + JSON.stringify(resp.data);
 	        }, function (resp) {
-	            //console.log('Error status: ' + resp.status);
+	            $scope.response = 'Error status: ' + resp.status;
 	        }, function (evt) {
 	            //var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
 	            //console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);

@@ -1,12 +1,17 @@
-<div class="md-button " ngf-select="upload($files)" ngf-multiple="true">Upload on file select</div>
-<div class="md-button " ngf-select="upload($files,false)" ngf-multiple="true">Upload on file select</div>
-<div class="md-button " ngf-select="upload($files,true,5)" ngf-multiple="true">Upload on file select (5 second processing and fail)</div>
-<div class="md-button " ngf-select="upload($files,false	,5)" ngf-multiple="true">Upload on file select (5 second processing)</div>
+<div class="md-button md-raised" ngf-select="upload($files)" ngf-multiple="true">Upload on file select</div>
+<div class="md-button md-raised" ngf-select="upload($files,false,0,{ fsUpload: false })" ngf-multiple="true">Upload on file select disable upload dock</div>
+<div class="md-button md-raised" ngf-select="upload($files,true,5)" ngf-multiple="true">Upload on file select (5 second processing and fail)</div>
+<div class="md-button md-raised" ngf-select="upload($files,false,5)" ngf-multiple="true">Upload on file select (5 second processing)</div>
 
 
 <p>
 	<h3>Status</h3>
 	{{status}}
+</p>
+
+<p>
+	<h3>Response</h3>
+	{{response}}
 </p>
 
 

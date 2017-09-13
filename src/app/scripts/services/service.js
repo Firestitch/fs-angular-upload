@@ -76,11 +76,12 @@
             	function autoClose() {
             		$timeout.cancel(autoCloseTimeout);
             		autoCloseTimeout = $timeout(function() {
-            			if($scope.status.uploading) {
+            			if(service.status.uploading || service.status.processing) {
             				return autoClose();
             			}
-            			$scope.close();
-            		},20 * 1000);
+            			fsDock.hide();
+            			service.processes = [];
+            		},15 * 1000);
             	}
 
             	function updateMessage(status) {
@@ -209,8 +210,18 @@
 				XMLHttpRequest.prototype.send = function(formData) {
 
 					if(formData && formData.files && formData.files.length) {
-						this.process = { status: 'pending', percent: 0, files: formData.files };
-						processes.push(this.process);
+
+						var fsUpload = true;
+						angular.forEach(formData,function(value,name) {
+							if(name=='fsUpload' && (!value || value==='false')) {
+								fsUpload = false;
+							}
+						});
+
+						if(fsUpload) {
+							this.process = { status: 'pending', percent: 0, files: formData.files };
+							processes.push(this.process);
+						}
 					}
 
 					return XMLHttpRequestSendProxy.apply(this, [].slice.call(arguments));
