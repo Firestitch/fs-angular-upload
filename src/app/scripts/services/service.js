@@ -8,7 +8,9 @@
 
 			provider.onloadstart = null;
 
-			this.$get = function ($rootScope, fsFormat, fsDate, $timeout, fsDock) {
+			this.$get = function ($rootScope, fsFormat, fsDate, $timeout, fsDock, $http, $templateCache) {
+
+				$http.get('views/directives/uploadstatus.html', { cache: $templateCache });
 
 				var XMLHttpRequestOpenProxy = window.XMLHttpRequest.prototype.open,
 					XMLHttpRequestSendProxy = window.XMLHttpRequest.prototype.send,
