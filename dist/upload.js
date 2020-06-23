@@ -217,7 +217,7 @@
 
 					XMLHttpRequest.prototype.send = function (formData) {
 
-						if (formData) {
+						if (formData instanceof FormData) {
 
 							var fsUpload = true;
 							var files = [];
