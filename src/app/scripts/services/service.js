@@ -10,14 +10,14 @@
 
 			this.$get = function ($rootScope, fsFormat, fsDate, $timeout, fsDock, $http, $templateCache) {
 
-				$http.get('views/directives/uploadstatus.html', { cache: $templateCache });
-
 				var XMLHttpRequestOpenProxy = window.XMLHttpRequest.prototype.open,
 					XMLHttpRequestSendProxy = window.XMLHttpRequest.prototype.send,
 					processes = [],
 					status = { uploading: 0, completed: 0, error: 0, processing: 0 },
 					scope = $rootScope.$new(),
 					events = {},
+					dockShow = false,
+					dockTemplate = '',
 					service = {
 						init: init,
 						processes: processes,
@@ -25,6 +25,14 @@
 						clear: clear,
 						on: on
 					};
+
+				dockTemplate = $templateCache.get('views/directives/uploadstatus.html');
+				if (!dockTemplate) {
+					$http.get('views/directives/uploadstatus.html', { cache: $templateCache })
+						.then(function (result) {
+							dockTemplate = result.data;
+						});
+				}
 
 				function clear(index = null) {
 					if (index === null) {
@@ -86,6 +94,7 @@
 
 								if (!service.processes.length) {
 									fsDock.hide();
+									dockShow = false;
 								}
 							}
 						}, 5000);
@@ -93,16 +102,17 @@
 
 					function updateMessage(status) {
 
-						if (status.uploading) {
-							var title = '<span ng-if="status.uploading">Uploading&nbsp;{{status.uploading}}&nbsp;<ng-pluralize count="status.uploading" when="{ \'one\': \'file\', \'other\': \'files\' }"></ng-pluralize><span ng-if="status.processing">,&nbsp;</span></span>\
-									<span ng-if="status.processing">Processing&nbsp;{{status.processing}}&nbsp;<ng-pluralize count="status.processing" when="{ \'one\': \'file\', \'other\': \'files\' }"></ng-pluralize></span>\
-									<span ng-if="!status.uploading && !status.processing && status.completed">Uploaded&nbsp;{{status.completed}}&nbsp;<ng-pluralize count="status.completed" when="{ \'one\': \'file\', \'other\': \'files\' }"></ng-pluralize><span ng-if="!status.uploading && status.error">,</span></span>\
-									<span ng-if="!status.uploading && !status.processing && status.error">{{status.error}}&nbsp;<ng-pluralize count="status.error" when="{ \'one\': \'upload\', \'other\': \'uploads\' }"></ng-pluralize>&nbsp;failed</span>';
+						if (status.uploading && !dockShow) {
+							dockShow = true;
+							// var title = '<span ng-if="status.uploading">Uploading&nbsp;{{status.uploading}}&nbsp;<ng-pluralize count="status.uploading" when="{ \'one\': \'file\', \'other\': \'files\' }"></ng-pluralize><span ng-if="status.processing">,&nbsp;</span></span>\
+							// 		<span ng-if="status.processing">Processing&nbsp;{{status.processing}}&nbsp;<ng-pluralize count="status.processing" when="{ \'one\': \'file\', \'other\': \'files\' }"></ng-pluralize></span>\
+							// 		<span ng-if="!status.uploading && !status.processing && status.completed">Uploaded&nbsp;{{status.completed}}&nbsp;<ng-pluralize count="status.completed" when="{ \'one\': \'file\', \'other\': \'files\' }"></ng-pluralize><span ng-if="!status.uploading && status.error">,</span></span>\
+							// 		<span ng-if="!status.uploading && !status.processing && status.error">{{status.error}}&nbsp;<ng-pluralize count="status.error" when="{ \'one\': \'upload\', \'other\': \'uploads\' }"></ng-pluralize>&nbsp;failed</span>';
 
 							fsDock.show(
 								{
-									templateUrl: 'views/directives/uploadstatus.html',
-									title: title,
+									template: dockTemplate,
+									title: ' ',
 									anchor: 'right',
 									class: 'fs-upload',
 									controller: ['$scope', 'processes', 'status', function ($scope, processes, status) {
@@ -111,6 +121,7 @@
 
 										$scope.hide = function () {
 											fsDock.hide();
+											dockShow = false;
 											angular.forEach($scope.processes, function (process) {
 												if (process.status != 'uploading') {
 													var index = $scope.processes.indexOf(process);
