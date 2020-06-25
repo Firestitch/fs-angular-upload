@@ -36,8 +36,8 @@
 						});
 				}
 
-				function clear(index = null) {
-					if (index === null) {
+				function clear(index) {
+					if (index === undefined || index === null) {
 						processes.splice(0);
 					} else {
 						processes.splice(index, 1);
