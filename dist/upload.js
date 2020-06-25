@@ -234,17 +234,14 @@
 
 							var fsUpload = true;
 							var files = [];
-							for (var value of formData.values()) {
+							formData.forEach(function (value) {
 								if (value instanceof File) {
 									files.push({ name: value.name });
 								}
-							}
-
-							for (var value of formData.values()) {
 								if (name == 'fsUpload' && (!value || value === 'false')) {
 									fsUpload = false;
 								}
-							}
+							});
 
 							if (fsUpload && files.length) {
 								this.process = { status: 'pending', percent: 0, files: files };
