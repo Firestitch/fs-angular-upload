@@ -228,6 +228,7 @@
 
 					XMLHttpRequest.prototype.send = function (formData) {
 
+
 						if (formData instanceof FormData) {
 
 							var fsUpload = true;
